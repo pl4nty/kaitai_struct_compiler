@@ -49,8 +49,8 @@ class LoadImports$Test extends AnyFunSpec {
       it("does not cut into protocol portion") {
         val urlPath = URLImportPath("https://example.com/file.ksy")
         val base = urlPath.baseDir
-        base.asInstanceOf[URLImportPath].url should not include ("://")
         base should be(URLImportPath("https://example.com"))
+        base.asInstanceOf[URLImportPath].url should startWith("https://")
       }
     }
 
