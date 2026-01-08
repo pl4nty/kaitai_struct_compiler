@@ -82,12 +82,16 @@ class JavaClassSpecs(relPath: String, absPaths: Seq[String], firstSpec: ClassSpe
       }
 
       val inputStream: InputStream = connection.getInputStream
-      val reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))
       try {
-        val scalaSrc = JavaKSYParser.readerToYaml(reader)
-        ClassSpec.fromYaml(scalaSrc, Some(urlString))
+        val reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))
+        try {
+          val scalaSrc = JavaKSYParser.readerToYaml(reader)
+          ClassSpec.fromYaml(scalaSrc, Some(urlString))
+        } finally {
+          reader.close()
+        }
       } finally {
-        reader.close()
+        inputStream.close()
       }
     } finally {
       connection.disconnect()

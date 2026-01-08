@@ -121,7 +121,7 @@ object LoadImports {
     override def baseDir: ImportPath = {
       // For URLs, base directory is the URL up to the last slash
       val lastSlash = url.lastIndexOf('/')
-      if (lastSlash > 0) {
+      if (lastSlash >= 0 && lastSlash > url.indexOf("://") + 2) {
         URLImportPath(url.substring(0, lastSlash))
       } else {
         this
