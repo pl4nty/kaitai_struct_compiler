@@ -72,8 +72,8 @@ class JavaClassSpecs(relPath: String, absPaths: Seq[String], firstSpec: ClassSpe
     val connection = url.openConnection().asInstanceOf[HttpURLConnection]
     try {
       connection.setRequestMethod("GET")
-      connection.setConnectTimeout(10000) // 10 seconds
-      connection.setReadTimeout(30000) // 30 seconds
+      connection.setConnectTimeout(10000)
+      connection.setReadTimeout(30000)
       connection.connect()
 
       val responseCode = connection.getResponseCode

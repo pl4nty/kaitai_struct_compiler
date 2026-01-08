@@ -119,7 +119,6 @@ object LoadImports {
   }
   case class URLImportPath(url: String) extends ImportPath {
     override def baseDir: ImportPath = {
-      // For URLs, base directory is the URL up to the last slash
       val lastSlash = url.lastIndexOf('/')
       if (lastSlash >= 0 && lastSlash > url.indexOf("://") + 2) {
         URLImportPath(url.substring(0, lastSlash))
@@ -142,12 +141,10 @@ object LoadImports {
     def add(curWorkDir: ImportPath, newPath: ImportPath): ImportPath = {
       (curWorkDir, newPath) match {
         case (_, url: URLImportPath) =>
-          // URLs are absolute, return as-is
           url
         case (_, AbsoluteImportPath(newPathAbs)) =>
           AbsoluteImportPath(newPathAbs)
         case (URLImportPath(baseUrl), RelativeImportPath(newPathRel)) =>
-          // Relative path from URL base
           URLImportPath(baseUrl + "/" + newPathRel.mkString("/"))
         case (RelativeImportPath(curDir), RelativeImportPath(newPathRel)) =>
           RelativeImportPath(curDir ++ newPathRel)
