@@ -8,4 +8,5 @@ import scala.scalajs.js.annotation.JSGlobal
 @JSGlobal
 class JavaScriptImporter extends js.Object {
   def importYaml(name: String, mode: String): Promise[js.Object] = js.native
+  def importYamlFromUrl(url: String): Promise[js.Object] = js.native
 }

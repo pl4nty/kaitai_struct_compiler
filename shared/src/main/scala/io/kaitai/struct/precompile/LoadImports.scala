@@ -55,6 +55,8 @@ class LoadImports(specs: ClassSpecs) {
         specs.importRelative(p.mkString("/"), path, inFile)
       case AbsoluteImportPath(p) =>
         specs.importAbsolute(p.mkString("/"), path, inFile)
+      case URLImportPath(url) =>
+        specs.importUrl(url, path, inFile)
     }
 
     futureSpec.flatMap { case optSpec =>
@@ -115,10 +117,23 @@ object LoadImports {
   case class AbsoluteImportPath(path: List[String]) extends ImportPath {
     override def baseDir: ImportPath = AbsoluteImportPath(path.init)
   }
+  case class URLImportPath(url: String) extends ImportPath {
+    override def baseDir: ImportPath = {
+      // For URLs, base directory is the URL up to the last slash
+      val lastSlash = url.lastIndexOf('/')
+      if (lastSlash > 0) {
+        URLImportPath(url.substring(0, lastSlash))
+      } else {
+        this
+      }
+    }
+  }
   val BasePath = RelativeImportPath(List())
 
   object ImportPath {
-    def fromString(s: String): ImportPath = if (s.startsWith("/")) {
+    def fromString(s: String): ImportPath = if (s.startsWith("http://") || s.startsWith("https://")) {
+      URLImportPath(s)
+    } else if (s.startsWith("/")) {
       AbsoluteImportPath(s.substring(1).split("/", -1).toList)
     } else {
       RelativeImportPath(s.split("/", -1).toList)
@@ -126,8 +141,14 @@ object LoadImports {
 
     def add(curWorkDir: ImportPath, newPath: ImportPath): ImportPath = {
       (curWorkDir, newPath) match {
+        case (_, url: URLImportPath) =>
+          // URLs are absolute, return as-is
+          url
         case (_, AbsoluteImportPath(newPathAbs)) =>
           AbsoluteImportPath(newPathAbs)
+        case (URLImportPath(baseUrl), RelativeImportPath(newPathRel)) =>
+          // Relative path from URL base
+          URLImportPath(baseUrl + "/" + newPathRel.mkString("/"))
         case (RelativeImportPath(curDir), RelativeImportPath(newPathRel)) =>
           RelativeImportPath(curDir ++ newPathRel)
         case (AbsoluteImportPath(curDir), RelativeImportPath(newPathRel)) =>

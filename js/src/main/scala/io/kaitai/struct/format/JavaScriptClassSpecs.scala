@@ -17,6 +17,8 @@ class JavaScriptClassSpecs(importer: JavaScriptImporter, firstSpec: ClassSpec)
     doImport(name, path, MODE_REL)
   override def importAbsolute(name: String, path: List[String], inFile: Option[String]): Future[Option[ClassSpec]] =
     doImport(name, path, MODE_ABS)
+  override def importUrl(url: String, path: List[String], inFile: Option[String]): Future[Option[ClassSpec]] =
+    doImportUrl(url, path)
 
   def doImport(name: String, path: List[String], mode: String): Future[Option[ClassSpec]] = {
     implicit val ec: ExecutionContext = JSExecutionContext.queue
@@ -25,6 +27,18 @@ class JavaScriptClassSpecs(importer: JavaScriptImporter, firstSpec: ClassSpec)
       .transform((yaml) => {
         val yamlScala = JavaScriptKSYParser.yamlJavascriptToScala(yaml)
         Some(ClassSpec.fromYaml(yamlScala, Some(name)))
+      }, (err) => {
+        throw ErrorInInput(err, path).toException
+      })
+  }
+
+  def doImportUrl(url: String, path: List[String]): Future[Option[ClassSpec]] = {
+    implicit val ec: ExecutionContext = JSExecutionContext.queue
+
+    importer.importYamlFromUrl(url).toFuture
+      .transform((yaml) => {
+        val yamlScala = JavaScriptKSYParser.yamlJavascriptToScala(yaml)
+        Some(ClassSpec.fromYaml(yamlScala, Some(url)))
       }, (err) => {
         throw ErrorInInput(err, path).toException
       })
