@@ -256,14 +256,14 @@ class PythonCompiler(typeProvider: ClassTypeProvider, config: RuntimeConfig)
 
   override def universalDoc(doc: DocSpec): Unit = {
     val docStr = doc.summary match {
-      case Some(summary) =>
+      case Some(summary) if summary.nonEmpty =>
         val lastChar = summary.last
         if (lastChar == '.' || lastChar == '\n') {
           summary
         } else {
           summary + "."
         }
-      case None =>
+      case _ =>
         ""
     }
 
@@ -279,7 +279,7 @@ class PythonCompiler(typeProvider: ClassTypeProvider, config: RuntimeConfig)
         s"$extraNewline\n.. seealso::\n${seeAlso.result}"
     }.mkString("\n")
 
-    out.putsLines("", "\"\"\"" + docStr + refStr + "\"\"\"")
+    out.putsLines("", "\"\"\"" + PythonCompiler.escapeDocstring(docStr + refStr) + "\"\"\"")
   }
 
   override def attrParseHybrid(leProc: () => Unit, beProc: () => Unit): Unit = {
@@ -968,6 +968,23 @@ object PythonCompiler extends LanguageCompilerStatic
     }
 
   def privateMemberName(id: Identifier): String = s"self.${idToStr(id)}"
+
+  private val DocstringQuoteRe = "\"(?=\"\"|\"*\\z)".r
+
+  /**
+    * Escapes text for the body of a non-raw `"""` docstring, so that the
+    * docstring evaluates to exactly the given text. Backslashes are doubled
+    * (otherwise `\d` gives "SyntaxWarning: invalid escape sequence" and `\n`
+    * silently becomes a newline). CR and NUL are escaped, since Python would
+    * normalise a raw CR to LF and rejects NUL in source. Quotes are escaped
+    * only where needed: the first quote of every `"""` (so it can't end the
+    * docstring early), and any quotes at the very end (so they can't merge
+    * with the closing delimiter).
+    */
+  def escapeDocstring(text: String): String = {
+    val escaped = text.replace("\\", "\\\\").replace("\r", "\\r").replace("\u0000", "\\x00")
+    DocstringQuoteRe.replaceAllIn(escaped, "\\\\\"")
+  }
 
   override def kstreamName: String = "KaitaiStream"
   override def kstructName: String = "KaitaiStruct"
